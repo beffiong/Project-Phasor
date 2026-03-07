@@ -1,1205 +1,627 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Phasor — The Training Infrastructure for Lean AI</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Mono:wght@300;400;500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<style>
-:root {
-  --bg: #f7f3ee;
-  --bg2: #efe9e1;
-  --bg3: #e8e0d5;
-  --bg-dark: #16120e;
-  --bg-darker: #0f0c09;
-  --border: rgba(100,80,55,0.13);
-  --border-mid: rgba(100,80,55,0.22);
-  --red: #d94f2b;
-  --orange: #e8782a;
-  --warm-brown: #5c4a35;
-  --warm-mid: #8c7355;
-  --warm-light: #b89970;
-  --warm-pale: rgba(92,74,53,0.07);
-  --text: #1a1410;
-  --text-mid: #6b5c48;
-  --text-dim: #9c8878;
-  --text-light: #bfb0a0;
-  --font-serif: 'Cormorant Garamond', Georgia, serif;
-  --font-mono: 'DM Mono', monospace;
-  --font-sans: 'Jost', system-ui, sans-serif;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--font-sans); line-height: 1.65; overflow-x: hidden; }
-
-/* ── TEXTURE ── */
-body::before {
-  content: '';
-  position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.018;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-.container { max-width: 1120px; margin: 0 auto; padding: 0 48px; position: relative; z-index: 1; }
-section { padding: 108px 0; position: relative; z-index: 1; }
-
-/* ── NAV ── */
-nav {
-  position: sticky; top: 0; z-index: 200;
-  height: 62px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 48px;
-  background: rgba(247,243,238,0.95); backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  transition: box-shadow 0.3s;
-}
-nav.scrolled { box-shadow: 0 2px 24px rgba(92,74,53,0.08); }
-.nav-logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
-.nav-logo img { height: 28px; width: auto; filter: brightness(0.1) sepia(0.2); }
-.nav-wordmark { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text); }
-.nav-links { display: flex; gap: 32px; list-style: none; }
-.nav-links a { font-size: 0.82rem; color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
-.nav-links a:hover { color: var(--text); }
-.nav-cta {
-  font-family: var(--font-mono); font-size: 0.71rem; letter-spacing: 0.07em;
-  background: var(--red); color: #fff; padding: 9px 20px; border-radius: 4px;
-  text-decoration: none; transition: background 0.2s;
-}
-.nav-cta:hover { background: var(--orange); }
-.nav-burger { display: none; background: none; border: none; cursor: pointer; flex-direction: column; gap: 5px; padding: 4px; }
-.nav-burger span { display: block; width: 22px; height: 1.5px; background: var(--text-mid); border-radius: 2px; }
-.mobile-menu { display: none; position: fixed; top: 62px; left: 0; right: 0; z-index: 199; background: var(--bg); border-bottom: 1px solid var(--border); flex-direction: column; padding: 12px 24px 20px; }
-.mobile-menu.open { display: flex; }
-.mobile-menu a { font-size: 1rem; color: var(--text-mid); text-decoration: none; padding: 13px 0; border-bottom: 1px solid var(--border); }
-
-/* ── LABELS ── */
-.eyebrow {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.16em;
-  text-transform: uppercase; color: var(--red); margin-bottom: 22px;
-}
-.eyebrow-line { width: 28px; height: 1px; background: var(--red); flex-shrink: 0; }
-.section-tag {
-  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--red);
-  background: rgba(217,79,43,0.07); border: 1px solid rgba(217,79,43,0.18);
-  padding: 3px 9px; border-radius: 3px; display: inline-block; margin-bottom: 20px;
-}
-
-/* ── TYPE ── */
-h1 {
-  font-family: var(--font-serif); font-weight: 600;
-  font-size: clamp(3rem, 5.5vw, 5rem);
-  line-height: 1.04; letter-spacing: -0.02em; color: var(--text);
-  margin-bottom: 26px;
-}
-h1 em { font-style: italic; color: var(--warm-brown); }
-h2 {
-  font-family: var(--font-serif); font-weight: 600;
-  font-size: clamp(2.2rem, 4vw, 3.5rem);
-  line-height: 1.1; letter-spacing: -0.015em; color: var(--text);
-  margin-bottom: 18px;
-}
-h2 em { font-style: italic; color: var(--warm-brown); }
-h3 { font-family: var(--font-sans); font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-
-/* ── BUTTONS ── */
-.btn-primary {
-  display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.06em;
-  background: var(--red); color: #fff; padding: 14px 32px; border-radius: 4px;
-  text-decoration: none; transition: background 0.2s, transform 0.15s;
-}
-.btn-primary:hover { background: var(--orange); transform: translateY(-1px); }
-.btn-ghost {
-  display: inline-block; font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.06em;
-  color: var(--warm-brown); text-decoration: none;
-  border-bottom: 1px solid var(--border-mid); padding-bottom: 2px;
-  transition: color 0.2s, border-color 0.2s;
-}
-.btn-ghost:hover { color: var(--red); border-color: var(--red); }
-
-/* ══════════════════════════════
-   HERO
-══════════════════════════════ */
-.hero {
-  min-height: 100vh; display: flex; align-items: center; padding-top: 62px;
-  background: var(--bg); overflow: hidden;
-}
-.hero-bg {
-  position: absolute; inset: 0; z-index: 0;
-  background:
-    radial-gradient(ellipse 55% 65% at 90% 45%, rgba(217,79,43,0.055), transparent),
-    radial-gradient(ellipse 45% 55% at 5% 85%, rgba(184,153,112,0.09), transparent);
-}
-.hero-inner {
-  display: grid; grid-template-columns: 1.15fr 0.85fr;
-  gap: 80px; align-items: center; position: relative; z-index: 1;
-}
-.hero-desc { font-size: 1.1rem; color: var(--text-mid); line-height: 1.8; max-width: 520px; margin-bottom: 38px; }
-.hero-actions { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-bottom: 52px; }
-.hero-proof {
-  display: flex; gap: 32px; align-items: center;
-  padding-top: 28px; border-top: 1px solid var(--border);
-}
-.hero-proof-item { }
-.hero-proof-val {
-  font-family: var(--font-serif); font-size: 1.6rem; font-weight: 700;
-  color: var(--text); line-height: 1;
-}
-.hero-proof-val span { color: var(--red); }
-.hero-proof-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; color: var(--text-dim); margin-top: 4px; }
-.hero-proof-sep { width: 1px; height: 36px; background: var(--border); }
-
-/* Hero card */
-.hero-card {
-  background: #fff; border: 1px solid var(--border-mid);
-  border-radius: 18px; padding: 38px 34px;
-  box-shadow: 0 6px 48px rgba(92,74,53,0.09), 0 1px 4px rgba(92,74,53,0.06);
-}
-.hero-card-eyebrow {
-  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
-}
-.hero-card-big {
-  font-family: var(--font-serif); font-size: 4.2rem; font-weight: 700;
-  color: var(--text); line-height: 1; margin-bottom: 4px;
-}
-.hero-card-big span { font-size: 2.2rem; color: var(--warm-light); }
-.hero-card-sub { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0; }
-.hc-divider { height: 1px; background: var(--border); margin: 20px 0; }
-.hero-card-metrics { display: grid; grid-template-columns: repeat(3,1fr); }
-.hc-metric { text-align: center; padding: 0 6px; border-right: 1px solid var(--border); }
-.hc-metric:last-child { border-right: none; }
-.hc-val { font-family: var(--font-serif); font-size: 1.7rem; font-weight: 700; color: var(--text); line-height: 1; }
-.hc-val span { color: var(--red); }
-.hc-label { font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.09em; color: var(--text-dim); margin-top: 4px; }
-.hero-card-round { }
-.hcr-label { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 5px; }
-.hcr-val { font-family: var(--font-serif); font-size: 1.4rem; font-weight: 600; color: var(--text); }
-.hcr-val span { color: var(--red); }
-.hcr-status {
-  display: flex; align-items: center; gap: 7px;
-  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em;
-  color: var(--text-mid); margin-top: 6px;
-}
-.pulse { width: 7px; height: 7px; border-radius: 50%; background: #4caf50; box-shadow: 0 0 6px #4caf50; animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-
-/* Animate hero in */
-@keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
-.hero-left > * { animation: fadeUp 0.7s ease both; }
-.hero-left > *:nth-child(1){animation-delay:0.05s}
-.hero-left > *:nth-child(2){animation-delay:0.15s}
-.hero-left > *:nth-child(3){animation-delay:0.25s}
-.hero-left > *:nth-child(4){animation-delay:0.38s}
-.hero-left > *:nth-child(5){animation-delay:0.5s}
-.hero-right { animation: fadeUp 0.7s ease 0.25s both; }
-
-/* ══════════════════════════════
-   VISION STRIP
-══════════════════════════════ */
-.vision-strip { background: var(--bg-dark); padding: 0; }
-.vision-inner {
-  display: flex; align-items: center;
-  padding: 52px 0; gap: 0;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.vision-quote {
-  font-family: var(--font-serif); font-size: clamp(1.2rem, 2.5vw, 1.7rem);
-  font-style: italic; line-height: 1.55;
-  color: rgba(247,243,238,0.82); flex: 1;
-}
-.vision-quote strong { color: #d4b896; font-style: normal; }
-.vision-source {
-  font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.12em;
-  color: rgba(247,243,238,0.25); text-transform: uppercase;
-  padding-left: 48px; flex-shrink: 0; max-width: 180px; line-height: 1.6;
-  border-left: 1px solid rgba(255,255,255,0.08);
-  margin-left: 48px;
-}
-
-/* ══════════════════════════════
-   PROBLEM / OPPORTUNITY
-══════════════════════════════ */
-.section-opportunity { background: var(--bg2); }
-.opp-lead { font-size: 1.05rem; color: var(--text-mid); line-height: 1.8; max-width: 640px; margin-bottom: 52px; }
-.opp-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-bottom: 48px; }
-.opp-card {
-  background: var(--bg); border: 1px solid var(--border);
-  border-radius: 12px; padding: 30px 26px;
-  transition: border-color 0.2s, transform 0.2s;
-}
-.opp-card:hover { border-color: var(--border-mid); transform: translateY(-3px); }
-.opp-num { font-family: var(--font-serif); font-size: 2.6rem; font-weight: 700; color: var(--red); line-height: 1; margin-bottom: 10px; }
-.opp-card p { font-size: 0.87rem; color: var(--text-mid); line-height: 1.72; }
-
-.insight-box {
-  background: var(--bg-dark); border-radius: 12px; padding: 44px 52px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 52px; align-items: center;
-}
-.insight-label { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm-light); margin-bottom: 14px; }
-.insight-text { font-family: var(--font-serif); font-size: 1.2rem; color: rgba(247,243,238,0.82); line-height: 1.7; font-style: italic; }
-.insight-text strong { color: #d4b896; font-style: normal; }
-.insight-right { display: flex; flex-direction: column; gap: 16px; }
-.insight-stat {
-  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 8px; padding: 18px 22px;
-}
-.insight-stat-val { font-family: var(--font-serif); font-size: 1.8rem; font-weight: 700; color: #d4b896; line-height: 1; }
-.insight-stat-label { font-size: 0.8rem; color: rgba(247,243,238,0.45); margin-top: 4px; }
-
-/* ══════════════════════════════
-   WHAT WE BUILD
-══════════════════════════════ */
-.section-product { background: var(--bg); }
-.product-header { max-width: 680px; margin-bottom: 56px; }
-.product-header p { font-size: 1.05rem; color: var(--text-mid); line-height: 1.8; margin-top: 14px; }
-.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 48px; }
-.product-card {
-  background: #fff; border: 1px solid var(--border);
-  border-radius: 14px; padding: 34px 30px;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-  position: relative; overflow: hidden;
-}
-.product-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg, var(--red), var(--orange));
-  opacity: 0; transition: opacity 0.2s;
-}
-.product-card:hover { border-color: var(--border-mid); box-shadow: 0 8px 36px rgba(92,74,53,0.07); transform: translateY(-3px); }
-.product-card:hover::before { opacity: 1; }
-.product-icon { font-size: 2rem; margin-bottom: 16px; }
-.product-card h3 { font-size: 1.05rem; margin-bottom: 10px; }
-.product-card p { font-size: 0.86rem; color: var(--text-mid); line-height: 1.72; }
-.product-tag { display: inline-block; margin-top: 16px; font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.09em; color: var(--warm-mid); background: var(--warm-pale); border: 1px solid var(--border); padding: 3px 10px; border-radius: 100px; }
-
-/* Platform bridge diagram */
-.bridge-diagram {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
-  padding: 44px 48px;
-}
-.bridge-diagram h3 { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-.bridge-diagram > p { font-size: 0.9rem; color: var(--text-mid); margin-bottom: 36px; }
-.bridge-row {
-  display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: center;
-}
-.bridge-side { display: flex; flex-direction: column; gap: 10px; }
-.bridge-side.right { align-items: flex-end; }
-.bridge-item {
-  background: #fff; border: 1px solid var(--border);
-  border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; gap: 10px;
-  font-size: 0.87rem; color: var(--text-mid);
-  transition: border-color 0.2s;
-}
-.bridge-item:hover { border-color: var(--border-mid); }
-.bridge-item-icon { font-size: 1.1rem; flex-shrink: 0; }
-.bridge-center {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 0 32px;
-}
-.bridge-logo-wrap {
-  background: var(--bg-dark); border-radius: 50%;
-  width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;
-  border: 2px solid rgba(217,79,43,0.3);
-  box-shadow: 0 0 0 8px rgba(217,79,43,0.06);
-}
-.bridge-logo-wrap img { height: 36px; width: auto; filter: invert(1) brightness(0.8); }
-.bridge-arrows { display: flex; flex-direction: column; gap: 4px; align-items: center; }
-.bridge-arrow {
-  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em;
-  color: var(--red); display: flex; align-items: center; gap: 6px;
-}
-.bridge-arrow::before, .bridge-arrow::after { content: ''; width: 36px; height: 1px; background: rgba(217,79,43,0.3); }
-.bridge-label {
-  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; text-align: center;
-}
-
-/* ══════════════════════════════
-   TRACTION
-══════════════════════════════ */
-.section-traction { background: var(--bg2); }
-.traction-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; margin-bottom: 52px; background: #fff; border: 1px solid var(--border-mid); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 24px rgba(92,74,53,0.06); }
-.traction-stat { padding: 34px 24px; text-align: center; border-right: 1px solid var(--border); }
-.traction-stat:last-child { border-right: none; }
-.ts-val { font-family: var(--font-serif); font-size: 2.8rem; font-weight: 700; color: var(--text); line-height: 1; }
-.ts-val span { color: var(--red); }
-.ts-label { font-size: 0.8rem; font-weight: 600; color: var(--text-mid); margin-top: 7px; }
-.ts-sub { font-size: 0.72rem; color: var(--text-light); margin-top: 3px; }
-
-.milestones { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
-.milestone-card {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
-  padding: 26px 28px; display: flex; gap: 16px; align-items: flex-start;
-}
-.milestone-icon {
-  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 1rem;
-}
-.milestone-icon.done { background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.25); }
-.milestone-icon.progress { background: rgba(217,79,43,0.08); border: 1px solid rgba(217,79,43,0.2); }
-.milestone-title { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-.milestone-desc { font-size: 0.81rem; color: var(--text-mid); line-height: 1.65; }
-.milestone-badge {
-  display: inline-block; margin-top: 8px; font-family: var(--font-mono);
-  font-size: 0.58rem; letter-spacing: 0.09em; padding: 2px 8px; border-radius: 3px;
-}
-.milestone-badge.done { background: rgba(76,175,80,0.1); color: #4caf50; border: 1px solid rgba(76,175,80,0.25); }
-.milestone-badge.accent { background: rgba(217,79,43,0.08); color: var(--red); border: 1px solid rgba(217,79,43,0.2); }
-
-.quotes-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
-.quote-card {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
-  padding: 26px; transition: border-color 0.2s;
-}
-.quote-card:hover { border-color: var(--border-mid); }
-.qmark { font-family: var(--font-serif); font-size: 3.5rem; color: var(--warm-light); line-height: 0.6; margin-bottom: 10px; display: block; opacity: 0.55; }
-.quote-card p { font-family: var(--font-serif); font-size: 0.95rem; color: var(--text-mid); line-height: 1.7; font-style: italic; margin-bottom: 16px; }
-.quote-attr { border-top: 1px solid var(--border); padding-top: 12px; }
-.quote-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
-.quote-role { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.05em; color: var(--text-dim); margin-top: 2px; }
-
-/* ══════════════════════════════
-   MARKET & MODEL
-══════════════════════════════ */
-.section-market { background: var(--bg); }
-.market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 48px; }
-.market-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 30px; }
-.market-card h3 { font-size: 0.95rem; margin-bottom: 10px; }
-.market-card p { font-size: 0.86rem; color: var(--text-mid); line-height: 1.72; }
-.market-big { font-family: var(--font-serif); font-size: 3rem; font-weight: 700; color: var(--red); line-height: 1; margin: 12px 0 6px; }
-.market-big span { font-size: 1.5rem; color: var(--warm-light); }
-
-.revenue-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 40px; }
-.rev-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 26px 22px; transition: border-color 0.2s, transform 0.2s; }
-.rev-card:hover { border-color: var(--border-mid); transform: translateY(-3px); }
-.rev-phase { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
-.rev-icon { font-size: 1.5rem; margin-bottom: 10px; }
-.rev-card h3 { font-size: 0.9rem; margin-bottom: 8px; }
-.rev-card p { font-size: 0.82rem; color: var(--text-mid); line-height: 1.68; }
-.rev-amount { font-family: var(--font-mono); font-size: 0.72rem; color: var(--red); margin-top: 12px; font-weight: 500; }
-
-.competitor-block { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 36px 36px; }
-.competitor-block h3 { font-family: var(--font-serif); font-size: 1.4rem; font-weight: 600; color: var(--text); margin-bottom: 24px; }
-.comp-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
-.comp-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
-.comp-name { font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-.comp-desc { font-size: 0.8rem; color: var(--text-mid); line-height: 1.6; }
-.comp-gap { font-family: var(--font-mono); font-size: 0.6rem; color: var(--red); margin-top: 8px; }
-
-/* ══════════════════════════════
-   TEAM
-══════════════════════════════ */
-.section-team { background: var(--bg2); }
-.team-sub { font-size: 1.05rem; color: var(--text-mid); line-height: 1.8; max-width: 600px; margin-bottom: 52px; }
-.team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 40px; }
-.team-card {
-  background: #fff; border: 1px solid var(--border); border-radius: 14px;
-  padding: 34px 30px; transition: border-color 0.2s, box-shadow 0.2s;
-}
-.team-card:hover { border-color: var(--border-mid); box-shadow: 0 4px 28px rgba(92,74,53,0.07); }
-.team-avatar {
-  width: 54px; height: 54px; border-radius: 50%;
-  background: var(--bg2); border: 1px solid var(--border-mid);
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-serif); font-size: 1.1rem; font-weight: 700;
-  color: var(--warm-brown); margin-bottom: 18px;
-}
-.team-name { font-size: 1.05rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
-.team-title { font-family: var(--font-mono); font-size: 0.63rem; letter-spacing: 0.07em; color: var(--red); margin-bottom: 14px; }
-.team-bio { font-size: 0.84rem; color: var(--text-mid); line-height: 1.74; margin-bottom: 16px; }
-.team-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.team-chips span { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.05em; color: var(--warm-mid); background: var(--bg2); border: 1px solid var(--border); padding: 3px 9px; border-radius: 3px; }
-
-.advisors-block { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 32px; }
-.adv-label { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 20px; }
-.adv-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
-.adv-item strong { display: block; font-size: 0.84rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
-.adv-item span { font-size: 0.73rem; color: var(--text-dim); }
-
-/* ══════════════════════════════
-   CONTACT
-══════════════════════════════ */
-.section-contact { background: var(--bg-darker); }
-.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 88px; align-items: start; }
-.contact-left h2 { color: #f0ebe3; margin-bottom: 16px; }
-.contact-left h2 em { color: #c8a97e; }
-.contact-left p { font-size: 0.97rem; color: rgba(240,235,227,0.6); line-height: 1.82; margin-bottom: 36px; }
-.contact-detail-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.13em; text-transform: uppercase; color: rgba(240,235,227,0.28); margin-bottom: 4px; }
-.contact-detail-val a { font-size: 0.92rem; color: #c8a97e; text-decoration: none; border-bottom: 1px solid rgba(200,169,126,0.3); transition: border-color 0.2s; }
-.contact-detail-val a:hover { border-color: #c8a97e; }
-.contact-details { display: flex; flex-direction: column; gap: 14px; }
-
-.contact-form { background: #fff; border-radius: 16px; padding: 42px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 10px 60px rgba(0,0,0,0.3); }
-.contact-form h3 { font-family: var(--font-serif); font-size: 1.45rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.11em; color: var(--text-dim); }
-.form-group input, .form-group select, .form-group textarea {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-  color: var(--text); font-family: var(--font-sans); font-size: 0.875rem;
-  padding: 11px 14px; outline: none; -webkit-appearance: none;
-  transition: border-color 0.2s;
-}
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: rgba(217,79,43,0.45); }
-.form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-light); }
-.form-group textarea { resize: vertical; min-height: 96px; }
-.form-submit {
-  font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.07em;
-  background: var(--red); color: #fff; padding: 14px; border-radius: 6px;
-  border: none; cursor: pointer; font-weight: 500; transition: background 0.2s;
-}
-.form-submit:hover { background: var(--orange); }
-.form-note { font-size: 0.73rem; color: var(--text-light); text-align: center; line-height: 1.55; }
-
-/* ── FOOTER ── */
-footer { padding: 36px 48px; background: #0a0806; border-top: 1px solid rgba(255,255,255,0.05); }
-.footer-inner { display: flex; justify-content: space-between; align-items: flex-start; gap: 40px; }
-.footer-logo { height: 24px; width: auto; filter: invert(1) brightness(0.55); opacity: 0.6; margin-bottom: 12px; display: block; }
-.footer-disc { font-size: 0.7rem; color: rgba(255,255,255,0.22); line-height: 1.65; max-width: 420px; }
-.footer-links { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 8px; }
-.footer-links a { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.06em; color: rgba(255,255,255,0.3); text-decoration: none; transition: color 0.2s; }
-.footer-links a:hover { color: rgba(255,255,255,0.65); }
-.footer-copy { font-family: var(--font-mono); font-size: 0.62rem; color: rgba(255,255,255,0.18); }
-.footer-right { text-align: right; }
-
-
-/* ══════════════════════════════
-   COMMUNITY / SUB-TEAMS
-══════════════════════════════ */
-.section-community { background: var(--bg); }
-.community-sub { font-size: 1.05rem; color: var(--text-mid); line-height: 1.8; max-width: 620px; margin-bottom: 52px; }
-
-.wg-block { margin-bottom: 48px; }
-.wg-header { margin-bottom: 28px; }
-.wg-header-tag {
-  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--red);
-  background: rgba(217,79,43,0.07); border: 1px solid rgba(217,79,43,0.2);
-  padding: 4px 12px; border-radius: 3px; display: inline-block; margin-bottom: 10px;
-}
-.wg-header-tag.application {
-  color: var(--warm-mid); background: var(--warm-pale);
-  border-color: var(--border-mid);
-}
-.wg-header-desc { font-size: 0.9rem; color: var(--text-mid); line-height: 1.7; max-width: 560px; }
-
-.wg-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-}
-.wg-card {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 12px; padding: 24px 20px;
-  transition: border-color 0.2s, transform 0.2s, background 0.2s;
-}
-.wg-card:hover { border-color: var(--border-mid); transform: translateY(-3px); background: #fff; }
-.wg-card.app { background: #fff; border-color: var(--border); }
-.wg-card.app:hover { border-color: rgba(140,115,85,0.35); }
-.wg-icon { font-size: 1.6rem; margin-bottom: 12px; }
-.wg-name { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-.wg-desc { font-size: 0.8rem; color: var(--text-mid); line-height: 1.68; margin-bottom: 12px; }
-.wg-tag { font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.08em; color: var(--text-light); }
-
-.community-cta {
-  background: var(--bg-dark); border-radius: 14px; padding: 44px 52px;
-}
-.community-cta-inner {
-  display: flex; align-items: center; gap: 52px;
-}
-.community-cta-val {
-  font-family: var(--font-serif); font-size: 3.2rem; font-weight: 700;
-  color: #f0ebe3; line-height: 1; white-space: nowrap;
-}
-.community-cta-val span { color: var(--orange); }
-.community-cta-label { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; color: rgba(240,235,227,0.35); margin-top: 4px; }
-.community-cta-text { flex: 1; }
-.community-cta-text p { font-size: 0.95rem; color: rgba(240,235,227,0.6); line-height: 1.78; }
-
-@media(max-width:980px) {
-  .wg-grid { grid-template-columns: 1fr 1fr; }
-  .community-cta-inner { flex-direction: column; gap: 28px; align-items: flex-start; }
-}
-@media(max-width:600px) {
-  .wg-grid { grid-template-columns: 1fr; }
-}
-
-/* ── REVEAL ── */
-.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.55s ease, transform 0.55s ease; }
-.reveal.visible { opacity: 1; transform: translateY(0); }
-
-/* ── RESPONSIVE ── */
-@media(max-width:980px) {
-  .hero-inner, .contact-grid { grid-template-columns: 1fr; gap: 52px; }
-  .opp-grid, .product-grid, .team-grid, .market-grid { grid-template-columns: 1fr; }
-  .traction-grid { grid-template-columns: 1fr 1fr; }
-  .revenue-grid, .quotes-row { grid-template-columns: 1fr; }
-  .milestones { grid-template-columns: 1fr; }
-  .comp-grid, .adv-grid { grid-template-columns: 1fr 1fr; }
-  .insight-box { grid-template-columns: 1fr; gap: 32px; }
-  .bridge-row { grid-template-columns: 1fr; gap: 24px; }
-  .bridge-center { flex-direction: row; padding: 0; }
-  section { padding: 80px 0 72px; }
-  nav { padding: 0 24px; }
-  .container { padding: 0 24px; }
-  .nav-links, .nav-cta { display: none; }
-  .nav-burger { display: flex; }
-  footer { padding: 28px 24px; }
-  .footer-inner { flex-direction: column; gap: 24px; }
-  .footer-right { text-align: left; }
-  .form-row { grid-template-columns: 1fr; }
-  .vision-inner { flex-direction: column; gap: 28px; }
-  .vision-source { border-left: none; padding-left: 0; margin-left: 0; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; max-width: 100%; }
-}
-@media(max-width:600px) {
-  h1 { font-size: 2.6rem; }
-  h2 { font-size: 2rem; }
-  .hero-proof { flex-wrap: wrap; gap: 20px; }
-  .traction-grid { grid-template-columns: 1fr 1fr; }
-  .adv-grid { grid-template-columns: 1fr; }
-  .bridge-arrows { display: none; }
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Project Phasor — Open-source neuromorphic computing infrastructure. Building shared compilers, virtual machines, and governance standards for the neuromorphic ecosystem." />
+  <title>Project Phasor — Neuromorphic Computing Infrastructure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
 
-<!-- NAV -->
-<nav id="nav">
-  <a href="#hero" class="nav-logo">
-    <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQABAADASIAAhEBAxEB/8QAHQABAAIDAQEBAQAAAAAAAAAAAAEIAgcJBgUEA//EAFoQAQABAwICBQYJBwcIBgkFAAABAgMEBQYHEQgSITFBExhRYXHTFCJCVVeBlJXSCTJSYpGhsRUjcoKSssEWJDM1U6KzwiU3OENjdSY2RFaDk6PR4VRzdISF/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAWEQEBAQAAAAAAAAAAAAAAAAAAEQH/2gAMAwEAAhEDEQA/ALlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/9k=" alt="Phasor"/>
-    <span class="nav-wordmark">Phasor</span>
-  </a>
-  <ul class="nav-links">
-    <li><a href="#opportunity">Opportunity</a></li>
-    <li><a href="#product">Platform</a></li>
-    <li><a href="#traction">Traction</a></li>
-    <li><a href="#market">Business</a></li>
-    <li><a href="#team">Team</a></li>
-    <li><a href="#community">Community</a></li><li><a href="#contact">Contact</a></li>
-  </ul>
-  <a href="#contact" class="nav-cta">Request Deck →</a>
-  <button class="nav-burger" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
-</nav>
-<div class="mobile-menu" id="mobile-menu">
-  <a href="#opportunity" onclick="closeMenu()">Opportunity</a>
-  <a href="#product" onclick="closeMenu()">Platform</a>
-  <a href="#traction" onclick="closeMenu()">Traction</a>
-  <a href="#market" onclick="closeMenu()">Business</a>
-  <a href="#team" onclick="closeMenu()">Team</a>
-  <a href="#contact" onclick="closeMenu()">Contact</a>
-</div>
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#home" class="nav-logo">
+      <img src="assets/images/logo.png" alt="Project Phasor" class="nav-logo-img" />
+    </a>
+    <ul class="nav-links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#mission">Mission</a></li>
+      <li><a href="#technology">Technology</a></li>
+      <li><a href="#team">Team</a></li>
+      <li><a href="#community">Community</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <a href="#contact" class="nav-cta">Get Involved</a>
+    <button class="nav-burger" onclick="toggleMobileMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
 
-<!-- HERO -->
-<section id="hero" class="hero">
-  <div class="hero-bg"></div>
-  <div class="container">
-    <div class="hero-inner">
-      <div class="hero-left">
-        <div class="eyebrow"><span class="eyebrow-line"></span>Investment Opportunity · projectphasor.com</div>
-        <h1>Training AI to stand<br/>under the <em>Sistine Chapel.</em></h1>
-        <p class="hero-desc">The next generation of AI runs lean — on neuromorphic, analog, and asynchronous chips. Phasor builds the training infrastructure that connects data-efficient model developers with the hardware they can't find anywhere else.</p>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#home" onclick="closeMobileMenu()">Home</a>
+    <a href="#mission" onclick="closeMobileMenu()">Mission</a>
+    <a href="#technology" onclick="closeMobileMenu()">Technology</a>
+    <a href="#team" onclick="closeMobileMenu()">Team</a>
+    <a href="#community" onclick="closeMobileMenu()">Community</a>
+    <a href="#contact" onclick="closeMobileMenu()">Contact</a>
+  </div>
+
+  <!-- HOME -->
+  <section id="home" class="section-hero">
+    <div class="hero-bg">
+      <div class="hero-grid"></div>
+      <div class="hero-orb hero-orb-1"></div>
+      <div class="hero-orb hero-orb-2"></div>
+      <svg class="phasor-visual" width="480" height="480" viewBox="0 0 480 480" aria-hidden="true">
+        <g transform="translate(240,240)">
+          <circle r="200" fill="none" stroke="rgba(210,195,168,0.06)" stroke-width="1"/>
+          <circle r="140" fill="none" stroke="rgba(210,195,168,0.09)" stroke-width="1"/>
+          <circle r="80"  fill="none" stroke="rgba(210,195,168,0.13)" stroke-width="1"/>
+          <line x1="-220" y1="0" x2="220" y2="0" stroke="rgba(210,195,168,0.05)" stroke-width="1"/>
+          <line x1="0" y1="-220" x2="0" y2="220" stroke="rgba(210,195,168,0.05)" stroke-width="1"/>
+          <line x1="0" y1="0" x2="136" y2="-78"  stroke="#c8a97e" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="136" cy="-78" r="3.5" fill="#c8a97e"/>
+          <line x1="0" y1="0" x2="-50" y2="-136" stroke="#8c7b6e" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="-50" cy="-136" r="3.5" fill="#8c7b6e"/>
+          <line x1="0" y1="0" x2="-86" y2="112"  stroke="rgba(180,160,130,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="-86" cy="112" r="3.5" fill="rgba(180,160,130,0.6)"/>
+          <circle r="4.5" fill="#c8a97e"/>
+          <circle class="ring-spin" r="200" fill="none" stroke="rgba(210,195,168,0.1)" stroke-width="1" stroke-dasharray="5 13"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Embrace. Extend. Precipitate.
+        </div>
+        <h1>
+          The foundation for<br/>
+          <em>neuromorphic</em><br/>
+          <span class="h1-dim">computing.</span>
+        </h1>
+        <p class="hero-sub">
+          Project Phasor is a collaborative open-source initiative building the shared infrastructure — compilers, virtual machines, and governance standards — that the neuromorphic ecosystem has been missing.
+        </p>
         <div class="hero-actions">
-          <a href="#contact" class="btn-primary">Request Investment Deck</a>
-          <a href="#product" class="btn-ghost">See the Platform ↓</a>
+          <a href="#mission" class="btn-primary">Our Mission</a>
+          <a href="#contact" class="btn-outline">Join the Community</a>
         </div>
-        <div class="hero-proof">
-          <div class="hero-proof-item">
-            <div class="hero-proof-val">6,200<span>+</span></div>
-            <div class="hero-proof-label">Community Members</div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-val">50<span class="stat-plus">+</span></div>
+            <div class="stat-label">Endorsers</div>
           </div>
-          <div class="hero-proof-sep"></div>
-          <div class="hero-proof-item">
-            <div class="hero-proof-val">4<span>+</span></div>
-            <div class="hero-proof-label">Hardware Partners</div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <div class="stat-val">3</div>
+            <div class="stat-label">Working Groups</div>
           </div>
-          <div class="hero-proof-sep"></div>
-          <div class="hero-proof-item">
-            <div class="hero-proof-val">$42K</div>
-            <div class="hero-proof-label">MRR Signed</div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <div class="stat-val">20<span class="stat-plus">+</span></div>
+            <div class="stat-label">Institutions</div>
           </div>
-          <div class="hero-proof-sep"></div>
-          <div class="hero-proof-item">
-            <div class="hero-proof-val">2</div>
-            <div class="hero-proof-label">Published Papers</div>
-          </div>
-        </div>
-      </div>
-      <div class="hero-right">
-        <div class="hero-card">
-          <div class="hero-card-eyebrow">Market Opportunity</div>
-          <div class="hero-card-big">$150<span>B</span></div>
-          <div class="hero-card-sub">AI accelerator market by 2030</div>
-          <div class="hc-divider"></div>
-          <div class="hero-card-metrics">
-            <div class="hc-metric">
-              <div class="hc-val">10<span>–</span>20<span>%</span></div>
-              <div class="hc-label">Infra layer capture</div>
-            </div>
-            <div class="hc-metric">
-              <div class="hc-val">$15<span>–</span>30<span>B</span></div>
-              <div class="hc-label">Phasor TAM</div>
-            </div>
-            <div class="hc-metric">
-              <div class="hc-val">2000<span>%</span></div>
-              <div class="hc-label">Revenue growth by June</div>
-            </div>
-          </div>
-          <div class="hc-divider"></div>
-          <div class="hero-card-round">
-            <div class="hcr-label">Current Round</div>
-            <div class="hcr-val">Seed — <span>$[X]M</span></div>
-            <div class="hcr-status"><span class="pulse"></span>Open for commitments</div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <div class="stat-val">∞</div>
+            <div class="stat-label">Open Source</div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- VISION STRIP -->
-<div class="vision-strip">
-  <div class="container">
-    <div class="vision-inner">
-      <p class="vision-quote">"The AIs built during the massive data center build-outs of the 2020s are now confined to a niche. It is the newer, more agile <strong>Lean AI</strong> models — trained in data scarcity, limited compute, and heterogeneous local reactance — that are plowing fields and helping humanity settle on Mars."</p>
-      <div class="vision-source">Phasor Vision — The Sistine Chapel Thesis · 2025</div>
-    </div>
-  </div>
-</div>
+  <div class="section-divider"></div>
 
-<!-- OPPORTUNITY -->
-<section id="opportunity" class="section-opportunity">
-  <div class="container">
-    <div class="section-tag">01 — The Opportunity</div>
-    <h2>AI is hitting a wall.<br/><em>We're building the door.</em></h2>
-    <p class="opp-lead reveal">AI today is trained on data abundance and energy gluttony. But the next frontier — embodied AI, edge AI, robotics — demands models that thrive in data scarcity, limited compute, and heterogeneous hardware. The infrastructure for this transition doesn't exist. That's Phasor's opening.</p>
-
-    <div class="opp-grid">
-      <div class="opp-card reveal">
-        <div class="opp-num">1000×</div>
-        <h3>Energy efficiency gap</h3>
-        <p>Neuromorphic and analog chips deliver orders-of-magnitude better energy efficiency than GPUs for sparse, event-driven workloads. But without shared training infrastructure, this advantage stays locked inside research labs.</p>
+  <!-- MISSION -->
+  <section id="mission" class="section-mission">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Mission</span>
+        <h2>Why neuromorphic computing<br/>needs Phasor</h2>
       </div>
-      <div class="opp-card reveal">
-        <div class="opp-num">$0</div>
-        <h3>Shared training infrastructure</h3>
-        <p>Every developer, every chip maker, every research lab builds from scratch. No standardized datasets. No shared benchmarks. No way to find each other. Intel just closed research access to Loihi2 — the alarm bells are ringing.</p>
-      </div>
-      <div class="opp-card reveal">
-        <div class="opp-num">90%</div>
-        <h3>Of developers cite hardware access</h3>
-        <p>After 130+ customer interviews across developers, hardware makers, and researchers — 90% of conversations come back to the same problem: no access to the right hardware or the right dataset. Not because of budget.</p>
-      </div>
-    </div>
-
-    <div class="insight-box reveal">
-      <div>
-        <div class="insight-label">The Insight</div>
-        <p class="insight-text">"The winner of the next computing era isn't a single chip company. It's whoever builds the <strong>abstraction layer above the hardware</strong>. We don't pick winners — we enable the market."</p>
-      </div>
-      <div class="insight-right">
-        <div class="insight-stat">
-          <div class="insight-stat-val">130+</div>
-          <div class="insight-stat-label">Customer interviews — developers, hardware makers, researchers at NeurIPS, Caltech, MIT, ETH Zurich, Google, NVIDIA, Tesla, AMD, Mercedes</div>
+      <div class="mission-layout">
+        <div class="mission-text">
+          <p>
+            Neuromorphic computing holds transformative promise: brain-inspired processors capable of running intelligence with <strong>orders of magnitude less power</strong> than today's GPUs. Yet despite decades of research, real-world adoption remains frustratingly slow.
+          </p>
+          <p>
+            The reason is fragmentation. Academic labs build novel hardware with no path to production. Commercial vendors develop proprietary stacks that don't interoperate. Every team reinvents the same low-level infrastructure, over and over.
+          </p>
+          <blockquote>
+            "Bridges are sorely needed between commercial and academic neuromorphic efforts."
+            <cite>— Dylan Muir, SynSense</cite>
+          </blockquote>
+          <p>
+            <strong>Project Phasor is building those bridges.</strong> We develop shared, open-source infrastructure — virtual machines for hardware exploration, a production compiler framework, and common governance standards — that the entire neuromorphic ecosystem can build on together.
+          </p>
         </div>
-        <div class="insight-stat">
-          <div class="insight-stat-val">$150B</div>
-          <div class="insight-stat-label">AI accelerator market by 2030. Infrastructure layers historically capture 10–20% of underlying markets.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- PRODUCT -->
-<section id="product" class="section-product">
-  <div class="container">
-    <div class="section-tag">02 — The Platform</div>
-    <div class="product-header">
-      <h2>The training gym for<br/><em>Lean AI.</em></h2>
-      <p>Phasor connects data-efficient model developers with neuromorphic, analog, and asynchronous chip makers — providing proprietary training data and pipelines for developers, and benchmark diagnostics for hardware makers. Two sides, one platform, one critical abstraction layer.</p>
-    </div>
-
-    <div class="product-grid">
-      <div class="product-card reveal">
-        <div class="product-icon">🧠</div>
-        <h3>Neuromorphic Data Platform</h3>
-        <p>The largest database of neuromorphic data — and growing. Proprietary event-based data converted from visual sources, with audio and gesture pipelines next. Accessible to pilot research groups today, with a Mag 7 company and a European car manufacturer in confirmation for their neuromorphic units.</p>
-        <div class="product-tag">$40M ARR Potential</div>
-      </div>
-      <div class="product-card reveal">
-        <div class="product-icon">🔗</div>
-        <h3>Phasor Cargo — The Bridge</h3>
-        <p>Training and job submission pipeline connecting model developers to hardware partners. Developers get on-demand access to neuromorphic compute. Hardware makers get real-world diagnostics and benchmarking against a comprehensive list of competing chips. Nobody else is doing this.</p>
-        <div class="product-tag">$2K–$14K/mo per partner</div>
-      </div>
-      <div class="product-card reveal">
-        <div class="product-icon">🏆</div>
-        <h3>Phaggle — Developer Competition</h3>
-        <p>A hackathon-style pipeline designed to get developers fluent on the platform and submitting jobs to hardware partners. Launching to expose Phasor to the broader developer community and stress-test Cargo with 8 hardware partners simultaneously.</p>
-        <div class="product-tag">Community Flywheel</div>
-      </div>
-      <div class="product-card reveal">
-        <div class="product-icon">⚙️</div>
-        <h3>AI-Powered Data Conversion</h3>
-        <p>Proprietary encoding pipeline that converts visual data into event-based neuromorphic frames. Built with Claude Code, n8n, and Video2Event. The strategic advantage is our encoding — not just the data. Scaling AI to neuromorphic is Scale AI for the next hardware era.</p>
-        <div class="product-tag">Proprietary Pipeline</div>
-      </div>
-    </div>
-
-    <!-- Platform bridge diagram -->
-    <div class="bridge-diagram reveal">
-      <h3>How Phasor Works</h3>
-      <p>Phasor sits at the center of the neuromorphic ecosystem — the connective tissue between chip makers and model developers.</p>
-      <div style="margin-top:32px">
-        <div class="bridge-row">
-          <div class="bridge-side">
-            <div class="bridge-label">Chip Makers</div>
-            <div class="bridge-item"><span class="bridge-item-icon">🔬</span>Neuromorphic startups</div>
-            <div class="bridge-item"><span class="bridge-item-icon">🏭</span>Analog chip fabs</div>
-            <div class="bridge-item"><span class="bridge-item-icon">⚡</span>Asynchronous processors</div>
-            <div class="bridge-item"><span class="bridge-item-icon">🔩</span>4+ signed hardware partners</div>
+        <div class="pillars">
+          <div class="pillar reveal">
+            <div class="pillar-num">01</div>
+            <h3>Bridge Academia &amp; Industry</h3>
+            <p>Address the disconnect where research prioritizes novelty and commercial entities can't invest in non-proprietary standards.</p>
           </div>
-          <div class="bridge-center">
-            <div class="bridge-logo-wrap">
-              <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQABAADASIAAhEBAxEB/8QAHQABAAIDAQEBAQAAAAAAAAAAAAEIAgcJBgUEA//EAFoQAQABAwICBQYJBwcIBgkFAAABAgMEBQYHEQgSITFBExhRYXHTFCJCVVeBlJXSCTJSYpGhsRUjcoKSssEWJDM1U6KzwiU3OENjdSY2RFaDk6PR4VRzdISF/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAWEQEBAQAAAAAAAAAAAAAAAAAAEQH/2gAMAwEAAhEDEQA/ALlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/9k=" alt="Phasor"/>
-            </div>
-            <div style="margin-top:12px; text-align:center">
-              <div class="bridge-arrow">data · jobs · benchmarks</div>
-            </div>
+          <div class="pillar reveal">
+            <div class="pillar-num">02</div>
+            <h3>Build Shared Infrastructure</h3>
+            <p>Develop compilers, virtual machines, and tooling that no single organization would build alone — freely available to all.</p>
           </div>
-          <div class="bridge-side right">
-            <div class="bridge-label" style="text-align:right">Model Developers</div>
-            <div class="bridge-item"><span class="bridge-item-icon">👩‍💻</span>Lean AI researchers</div>
-            <div class="bridge-item"><span class="bridge-item-icon">🤖</span>Robotics AI teams</div>
-            <div class="bridge-item"><span class="bridge-item-icon">🌱</span>Edge AI startups</div>
-            <div class="bridge-item"><span class="bridge-item-icon">🔭</span>6,200+ community members</div>
+          <div class="pillar reveal">
+            <div class="pillar-num">03</div>
+            <h3>Standardize &amp; Govern</h3>
+            <p>Work with ML Commons, Edge AI Foundation, OCP, and Khronos to establish the interoperability standards the field needs.</p>
+          </div>
+          <div class="pillar reveal">
+            <div class="pillar-num">04</div>
+            <h3>Accelerate Deployment</h3>
+            <p>Lower barriers so neuromorphic hardware becomes a genuine part of the global compute landscape.</p>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- TRACTION -->
-<section id="traction" class="section-traction">
-  <div class="container">
-    <div class="section-tag">03 — Traction</div>
-    <h2>Real signals.<br/><em>Real momentum.</em></h2>
+  <div class="section-divider"></div>
 
-    <div class="traction-grid reveal">
-      <div class="traction-stat">
-        <div class="ts-val">6,200<span>+</span></div>
-        <div class="ts-label">Community Members</div>
-        <div class="ts-sub">Model developers around Phasor</div>
-      </div>
-      <div class="traction-stat">
-        <div class="ts-val">$42K</div>
-        <div class="ts-label">MRR Signed</div>
-        <div class="ts-sub">3 data research partnerships</div>
-      </div>
-      <div class="traction-stat">
-        <div class="ts-val">130<span>+</span></div>
-        <div class="ts-label">Customer Interviews</div>
-        <div class="ts-sub">Developers, hardware, researchers</div>
-      </div>
-      <div class="traction-stat">
-        <div class="ts-val">4<span>+</span></div>
-        <div class="ts-label">Hardware Partners</div>
-        <div class="ts-sub">Signed pilot agreements</div>
-      </div>
-    </div>
-
-    <div class="milestones">
-      <div class="milestone-card reveal">
-        <div class="milestone-icon done">✅</div>
+  <!-- TECHNOLOGY -->
+  <section id="technology" class="section-technology">
+    <div class="container">
+      <div class="section-header split">
         <div>
-          <div class="milestone-title">2 Papers Accepted to Peer-Reviewed</div>
-          <div class="milestone-desc">TCP-SNN architecture and Memory-Augmented Spiking Networks — both peer-reviewed and published. Research foundation is validated and production-ready.</div>
-          <span class="milestone-badge accent">Peer-Reviewed</span>
+          <span class="section-tag">Technology</span>
+          <h2>Three pillars of<br/>open infrastructure</h2>
         </div>
+        <p class="section-sub">Phasor's roadmap is built around three complementary efforts forming a complete neuromorphic software stack.</p>
       </div>
-      <div class="milestone-card reveal">
-        <div class="milestone-icon done">✅</div>
-        <div>
-          <div class="milestone-title">Largest Neuromorphic Dataset</div>
-          <div class="milestone-desc">Proprietary event-based data generation pipeline. Visual-to-neuromorphic conversion built and live. Audio and gesture pipelines next. $40M ARR potential.</div>
-          <span class="milestone-badge done">Live</span>
-        </div>
-      </div>
-      <div class="milestone-card reveal">
-        <div class="milestone-icon done">✅</div>
-        <div>
-          <div class="milestone-title">$42K MRR — Data Partnerships Signed</div>
-          <div class="milestone-desc">3 research groups signed after last week's data platform push. Mag 7 company and European car manufacturer in confirmation for neuromorphic unit access.</div>
-          <span class="milestone-badge done">Signed</span>
-        </div>
-      </div>
-      <div class="milestone-card reveal">
-        <div class="milestone-icon progress">🔄</div>
-        <div>
-          <div class="milestone-title">Phaggle Competition Launch</div>
-          <div class="milestone-desc">Hackathon-style pipeline to onboard developers and stress-test Cargo with 8 hardware partners. Launches soon — community flywheel begins.</div>
-          <span class="milestone-badge accent">In Progress</span>
-        </div>
-      </div>
-    </div>
 
-    <div class="quotes-row">
-      <div class="quote-card reveal">
-        <span class="qmark">"</span>
-        <p>Please make it and let me know when you do!</p>
-        <div class="quote-attr">
-          <div class="quote-name">Model Developer</div>
-          <div class="quote-role">ETH Delft — NeurIPS 2025</div>
-        </div>
-      </div>
-      <div class="quote-card reveal">
-        <span class="qmark">"</span>
-        <p>You are going to save so much of my time. This would literally have needed us to create a whole other BD Team.</p>
-        <div class="quote-attr">
-          <div class="quote-name">Senior Leader</div>
-          <div class="quote-role">Leading UK Asynchronous Chip Manufacturer</div>
-        </div>
-      </div>
-      <div class="quote-card reveal">
-        <span class="qmark">"</span>
-        <p>The feedback will be so crucial. Can I pay you to help us build it?</p>
-        <div class="quote-attr">
-          <div class="quote-name">Head of Applications</div>
-          <div class="quote-role">Neuromorphic Hardware Startup</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- MARKET & MODEL -->
-<section id="market" class="section-market">
-  <div class="container">
-    <div class="section-tag">04 — Business Model</div>
-    <h2>Monetizing both sides<br/>of the <em>bridge.</em></h2>
-
-    <div class="market-grid">
-      <div class="market-card reveal">
-        <h3>Total Addressable Market</h3>
-        <div class="market-big">$150<span>B</span></div>
-        <p>AI accelerator market by 2030. Infrastructure layers historically capture 10–20% of underlying markets. When Phasor becomes the standard routing layer for next-gen AI compute, the TAM for the infrastructure layer alone is <strong>$15–30B</strong>.</p>
-      </div>
-      <div class="market-card reveal">
-        <h3>The Robotics Data Opportunity</h3>
-        <div class="market-big">$40M<span>+</span></div>
-        <p>ARR potential from neuromorphic data alone. The world is running out of high-quality training data. Phasor generates real-world event-based data for perception and actuation — exactly what Boston Dynamics, Figure, and Unitree need.</p>
-      </div>
-    </div>
-
-    <div class="revenue-grid">
-      <div class="rev-card reveal">
-        <div class="rev-phase">Now</div>
-        <div class="rev-icon">📊</div>
-        <h3>Data Subscriptions</h3>
-        <p>Research groups and AI labs pay for access to proprietary neuromorphic datasets. $6,000/mo per pilot group. Scaling with demand.</p>
-        <div class="rev-amount">$6K/mo per group · $42K MRR signed</div>
-      </div>
-      <div class="rev-card reveal">
-        <div class="rev-phase">Now → Scale</div>
-        <div class="rev-icon">🔗</div>
-        <h3>Hardware Bridge Access</h3>
-        <p>Chip makers pay $2K–$14K/mo for access to the Cargo bridge — backend infrastructure to host jobs, receive diagnostics, and benchmark against competition.</p>
-        <div class="rev-amount">$2K–$14K/mo · 4 signed partners</div>
-      </div>
-      <div class="rev-card reveal">
-        <div class="rev-phase">Scale</div>
-        <div class="rev-icon">⚙️</div>
-        <h3>Compute Transaction Fees</h3>
-        <p>As developer volume scales, Phasor takes transaction fees on compute jobs submitted through the bridge. Dynamic pricing based on usage and benchmarking detail.</p>
-        <div class="rev-amount">% of compute · scales with volume</div>
-      </div>
-    </div>
-
-    <div class="competitor-block reveal">
-      <h3>Why Phasor Wins</h3>
-      <div class="comp-grid">
-        <div class="comp-item">
-          <div class="comp-name">Neuromorphic Commons THOR</div>
-          <div class="comp-desc">NSF-funded academic platform. 160M neurons, 40B synapses — enough for a handful of research projects. Not commercial scale.</div>
-          <div class="comp-gap">→ Research-only. Not a marketplace.</div>
-        </div>
-        <div class="comp-item">
-          <div class="comp-name">Hyperscalers (AWS, Azure, Oracle)</div>
-          <div class="comp-desc">No incentive to switch gears — their margins depend on ROIC of existing GPU data center build-outs.</div>
-          <div class="comp-gap">→ Wrong incentives. Wrong hardware.</div>
-        </div>
-        <div class="comp-item">
-          <div class="comp-name">Groq, Cerebras, SambaNova</div>
-          <div class="comp-desc">Hardware startups selling directly. Competing against each other instead of building shared infrastructure.</div>
-          <div class="comp-gap">→ Vertical players, not infrastructure.</div>
-        </div>
-        <div class="comp-item">
-          <div class="comp-name">MLCommons / NeuroBench</div>
-          <div class="comp-desc">Provide standards but don't enable training. NeuroBench's limited eye-tracking data is already surpassed by Phasor's dataset.</div>
-          <div class="comp-gap">→ Standards, not a platform.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- TEAM -->
-<section id="team" class="section-team">
-  <div class="container">
-    <div class="section-tag">05 — Team</div>
-    <h2>The right team<br/><em>at the right moment.</em></h2>
-    <p class="team-sub reveal">We needed what Phasor is building ourselves. After a year of exhaustive research and 130+ interviews, we didn't find an alternative — so we built it. We have the aptitude, drive, and tenacity to make Phasor the only connective tissue in the world of data-efficient models.</p>
-
-    <div class="team-grid">
-      <div class="team-card reveal">
-        <div class="team-avatar">BE</div>
-        <div class="team-name">Blessing Effiong</div>
-        <div class="team-title">Co-CEO — Technical</div>
-        <div class="team-bio">PhD Neuromorphic Researcher at a leading neuromorphic research lab. Can knock out a full-stack implementation before breakfast. Built a crypto platform for her mother in Nigeria. Built the neuromorphic data generation pipeline for her department. Presented at NeurIPS. Briefed Congress on Brain-Inspired AI. Former full-stack developer and data scientist at SmartHub Nigeria and Livingston Research. The technical genius behind Phasor.</div>
-        <div class="team-chips">
-          <span>PhD Researcher</span><span>NeurIPS</span><span>Congress Briefing</span><span>Full-Stack</span><span>SNN Expert</span>
-        </div>
-      </div>
-      <div class="team-card reveal">
-        <div class="team-avatar">VT</div>
-        <div class="team-name">Veric Tan</div>
-        <div class="team-title">Co-CEO — Applications</div>
-        <div class="team-bio">Has an eye for turning frontier science into business opportunities. Previously launched 2 startups and learned from their failures. ML Engineer and Biotech Investment Analyst at a $5B AUM hedge fund — youngest analyst to ever direct investments that returned many folds over. Developed ML models predicting enthalpy stabilities of novel materials at Johns Hopkins. Contributor to the open-source neuromorphic framework SpikeJelly.</div>
-        <div class="team-chips">
-          <span>Johns Hopkins</span><span>$5B AUM Hedge Fund</span><span>SpikeJelly</span><span>2 Prior Startups</span><span>ML Engineer</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="advisors-block reveal">
-      <div class="adv-label">Community Endorsers &amp; Partners</div>
-      <div class="adv-grid">
-        <div class="adv-item"><strong>Caltech</strong><span>Research Partner</span></div>
-        <div class="adv-item"><strong>MIT</strong><span>Research Network</span></div>
-        <div class="adv-item"><strong>ETH Zurich</strong><span>Research Network</span></div>
-        <div class="adv-item"><strong>Johns Hopkins</strong><span>Research Network</span></div>
-        <div class="adv-item"><strong>AMD</strong><span>Industry Conversation</span></div>
-        <div class="adv-item"><strong>Mercedes</strong><span>Industry Conversation</span></div>
-        <div class="adv-item"><strong>TU Delft</strong><span>Hardware Partner</span></div>
-        <div class="adv-item"><strong>Peer-Reviewed</strong><span>2 Papers Accepted</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SUB-TEAMS -->
-<section id="community" class="section-community">
-  <div class="container">
-    <div class="section-tag">06 — Working Groups</div>
-    <h2>Built by a global<br/><em>community of builders.</em></h2>
-    <p class="community-sub reveal">Phasor is not a two-person startup. It's a movement. Our community of 6,200+ contributors is organized into technical working groups and application teams — each pushing the frontier of Lean AI in their domain.</p>
-
-    <!-- Technical Working Groups -->
-    <div class="wg-block reveal">
-      <div class="wg-header">
-        <div class="wg-header-tag">Technical Working Groups</div>
-        <p class="wg-header-desc">Core infrastructure tracks building the compiler, VM, datasets, and hardware integrations that power the Phasor platform.</p>
-      </div>
-      <div class="wg-grid">
-        <div class="wg-card">
-          <div class="wg-icon">⚙️</div>
-          <div class="wg-name">SG Compiler</div>
-          <div class="wg-desc">Building the open-source compiler framework for cross-platform neuromorphic deployment. LLVM-inspired, hardware-agnostic.</div>
-          <div class="wg-tag">#sg-compiler</div>
-        </div>
-        <div class="wg-card">
-          <div class="wg-icon">🖥️</div>
-          <div class="wg-name">SG Virtual Machine</div>
-          <div class="wg-desc">Cycle-accurate and behavioral reference models for neuromorphic cores — enabling development without physical silicon.</div>
-          <div class="wg-tag">#sg-virtual-machine</div>
-        </div>
-        <div class="wg-card">
-          <div class="wg-icon">🔀</div>
-          <div class="wg-name">SG Heterogeneous Systems</div>
-          <div class="wg-desc">Cross-architecture integration across neuromorphic, analog, and asynchronous chips. Making heterogeneous compute seamless.</div>
-          <div class="wg-tag">#sg-heterogeneous</div>
-        </div>
-        <div class="wg-card">
-          <div class="wg-icon">🏭</div>
-          <div class="wg-name">SG Data Center</div>
-          <div class="wg-desc">Scaling neuromorphic infrastructure to data-center environments. Bridging from edge to cloud-scale neuromorphic compute.</div>
-          <div class="wg-tag">#sg-datacenter</div>
-        </div>
-        <div class="wg-card">
-          <div class="wg-icon">🔴</div>
-          <div class="wg-name">SG AMD</div>
-          <div class="wg-desc">Dedicated integration track for AMD hardware — optimizing Phasor tooling for AMD's neuromorphic and edge AI chip roadmap.</div>
-          <div class="wg-tag">#sg-amd</div>
-        </div>
-        <div class="wg-card">
-          <div class="wg-icon">🗄️</div>
-          <div class="wg-name">SG Datasets</div>
-          <div class="wg-desc">Generating and curating the world's largest neuromorphic dataset. Event-based visual data today — audio and gesture pipelines next.</div>
-          <div class="wg-tag">#sg-datasets</div>
-        </div>
-        <div class="wg-card">
-          <div class="wg-icon">💰</div>
-          <div class="wg-name">SG Joint Fund</div>
-          <div class="wg-desc">Coordinating joint research funding, grants, and partnership opportunities across the Phasor ecosystem and standards bodies.</div>
-          <div class="wg-tag">#sg-joint-fund</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Application Teams -->
-    <div class="wg-block reveal">
-      <div class="wg-header">
-        <div class="wg-header-tag application">Application Teams</div>
-        <p class="wg-header-desc">Domain-specific teams applying Lean AI and neuromorphic models to real-world use cases — from robotics to space to agriculture.</p>
-      </div>
-      <div class="wg-grid">
-        <div class="wg-card app">
-          <div class="wg-icon">🤖</div>
-          <div class="wg-name">AI for Robotics</div>
-          <div class="wg-desc">Training embodied AI on neuromorphic hardware for physical world interaction. The team building the models that will plow fields and settle Mars.</div>
-          <div class="wg-tag">#team-ai4robotics</div>
-        </div>
-        <div class="wg-card app">
-          <div class="wg-icon">🚀</div>
-          <div class="wg-name">AI for Space</div>
-          <div class="wg-desc">Ultra-low power, radiation-tolerant neuromorphic AI for spacecraft. Real-time event-driven sensing and autonomous onboard inference — no Earth-dependent communication required.</div>
-          <div class="wg-tag">#team-ai4space</div>
-        </div>
-        <div class="wg-card app">
-          <div class="wg-icon">🌾</div>
-          <div class="wg-name">AI for Agriculture</div>
-          <div class="wg-desc">Resource-constrained edge AI for farming in low-connectivity, limited-power environments — exactly the problem that inspired Blessing's research under the World Bank scholarship.</div>
-          <div class="wg-tag">#team-ai4agriculture</div>
-        </div>
-        <div class="wg-card app">
-          <div class="wg-icon">🎵</div>
-          <div class="wg-name">AI for Audio</div>
-          <div class="wg-desc">Event-driven audio processing using spiking neural networks. Neuromorphic audio opens new frontiers in ultra-low-latency, energy-efficient sound recognition.</div>
-          <div class="wg-tag">#team-ai4audio</div>
-        </div>
-        <div class="wg-card app">
-          <div class="wg-icon">🔬</div>
-          <div class="wg-name">AI for Science</div>
-          <div class="wg-desc">Applying Lean AI to scientific computing — from materials discovery to climate modeling. Where data-efficient models meet the hardest problems in research.</div>
-          <div class="wg-tag">#team-ai4science</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CTA -->
-    <div class="community-cta reveal">
-      <div class="community-cta-inner">
-        <div>
-          <div class="community-cta-val">6,200<span>+</span></div>
-          <div class="community-cta-label">members and growing</div>
-        </div>
-        <div class="community-cta-text">
-          <p>Every working group is open. If you're a researcher, developer, or hardware maker who wants to be part of building the infrastructure for Lean AI — the door is open.</p>
-        </div>
-        <a href="https://discord.com/invite/jh9VQaNUdW" class="btn-primary" target="_blank">Join the Community →</a>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- CONTACT -->
-<section id="contact" class="section-contact">
-  <div class="container">
-    <div class="contact-grid">
-      <div class="contact-left reveal">
-        <div class="eyebrow" style="color:#c8a97e"><span class="eyebrow-line" style="background:#c8a97e"></span>06 — Get In Touch</div>
-        <h2>Ready to back<br/><em>the infrastructure?</em></h2>
-        <p>We're raising our seed round and building a select group of investors and strategic partners who understand that the next AI era runs lean. Request our deck and let's talk.</p>
-        <div class="contact-details">
-          <div>
-            <div class="contact-detail-label">Email</div>
-            <div class="contact-detail-val"><a href="/cdn-cgi/l/email-protection#7a13140c1f090e3a0a0815101f190e0a121b09150854191517"><span class="__cf_email__" data-cfemail="137a7d657660675363617c79767067637b72607c613d707c7e">[email&#160;protected]</span></a></div>
+      <div class="tech-cards">
+        <div class="tech-card reveal">
+          <div class="tech-num">01</div>
+          <div class="tech-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><polygon points="11,2 20,7 20,15 11,20 2,15 2,7" stroke="currentColor" stroke-width="1.4" fill="none"/><circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.2"/></svg>
           </div>
-          <div>
-            <div class="contact-detail-label">Website</div>
-            <div class="contact-detail-val"><a href="https://projectphasor.com">projectphasor.com</a></div>
+          <h3>Neuromorphic Virtual Machine</h3>
+          <p>A curated library of behavioral and cycle-accurate reference models for neuromorphic cores and systems. Enables hardware exploration, architecture design, and debugging without physical silicon — leveraging established SoC design tools like SystemC.</p>
+          <span class="tech-tag">Simulator</span>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-num">02</div>
+          <div class="tech-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="6" width="18" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><line x1="6" y1="10" x2="10" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="6" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
           </div>
-          <div>
-            <div class="contact-detail-label">Community</div>
-            <div class="contact-detail-val"><a href="https://project-phasor.com">project-phasor.com</a></div>
+          <h3>Compiler Framework</h3>
+          <p>A production-quality lower-level compiler built with a "compiler-first mentality." A foundational layer optimized for heterogeneous integration — providing the flexibility for higher-level frameworks to build upon rather than replacing them.</p>
+          <span class="tech-tag">Compiler</span>
+        </div>
+        <div class="tech-card reveal">
+          <div class="tech-num">03</div>
+          <div class="tech-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.4"/><path d="M11 4 L11 11 L16 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Governance &amp; Standards</h3>
+          <p>Engaging ML Commons, Edge AI Foundation, OCP, and Khronos to establish common governance. Working groups cover funding models, benchmarking suites tailored to neuromorphic systems, and cross-platform compatibility frameworks.</p>
+          <span class="tech-tag">Standards</span>
+        </div>
+      </div>
+
+      <div class="roadmap reveal">
+        <div class="roadmap-header">
+          <span class="section-tag" style="margin:0">Proposed Efforts Roadmap</span>
+        </div>
+        <div class="roadmap-items">
+          <div class="roadmap-item">
+            <div class="roadmap-label">Compiler</div>
+            <div class="roadmap-desc"><strong>Shared neuromorphic compiler</strong> — open, production-quality framework enabling cross-platform neuromorphic deployment.</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-label">Simulation</div>
+            <div class="roadmap-desc"><strong>Neuromorphic virtual machines</strong> — behavioral and cycle-accurate reference models for hardware-free exploration.</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-label">Integration</div>
+            <div class="roadmap-desc"><strong>Heterogeneous integration</strong> — frameworks enabling diverse neuromorphic chips to interoperate seamlessly.</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-label">Research</div>
+            <div class="roadmap-desc"><strong>Joint research fund</strong> — pooled funding for multi-lab collaboration on spiking datasets, training, and benchmarks.</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-label">Scale</div>
+            <div class="roadmap-desc"><strong>Data-center scale training</strong> — targeting neuromorphic hardware for large-scale SNN training workloads.</div>
+          </div>
+          <div class="roadmap-item">
+            <div class="roadmap-label">Data</div>
+            <div class="roadmap-desc"><strong>Neuromorphic datasets</strong> — procuring event-based datasets and making simulated worlds neuromorphic-enabled.</div>
           </div>
         </div>
       </div>
-      <form class="contact-form reveal" onsubmit="handleSubmit(event)">
-        <h3>Request Investment Deck</h3>
-        <div class="form-row">
-          <div class="form-group"><label>First Name</label><input type="text" placeholder="First name"/></div>
-          <div class="form-group"><label>Last Name</label><input type="text" placeholder="Last name"/></div>
-        </div>
-        <div class="form-group"><label>Email</label><input type="email" placeholder="you@fund.com"/></div>
-        <div class="form-group"><label>Organization</label><input type="text" placeholder="Fund / Family Office / Strategic Partner"/></div>
-        <div class="form-group"><label>Type of Interest</label>
-          <select>
-            <option value="">Select...</option>
-            <option>Institutional Investor / VC</option>
-            <option>Family Office</option>
-            <option>Strategic Partner / Corporation</option>
-            <option>Angel Investor</option>
-            <option>Government / Grant Funder</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Message</label><textarea placeholder="Tell us about your interest in Lean AI or Phasor..."></textarea></div>
-        <button type="submit" class="form-submit">Send Request →</button>
-        <p class="form-note">We respond within 48 hours. Deck shared under NDA upon request.</p>
-      </form>
     </div>
-  </div>
-</section>
+  </section>
 
-<footer>
-  <div class="footer-inner">
-    <div>
-      <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQABAADASIAAhEBAxEB/8QAHQABAAIDAQEBAQAAAAAAAAAAAAEIAgcJBgUEA//EAFoQAQABAwICBQYJBwcIBgkFAAABAgMEBQYHEQgSITFBExhRYXHTFCJCVVeBlJXSCTJSYpGhsRUjcoKSssEWJDM1U6KzwiU3OENjdSY2RFaDk6PR4VRzdISF/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAWEQEBAQAAAAAAAAAAAAAAAAAAEQH/2gAMAwEAAhEDEQA/ALlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/9k=" class="footer-logo" alt="Phasor"/>
-      <p class="footer-disc">This site is for informational purposes only and does not constitute an offer to sell or solicitation of an offer to buy any securities. Investment information is available to qualified investors only. © 2025 Phasor</p>
+  <div class="section-divider"></div>
+
+  <!-- TEAM -->
+  <section id="team" class="section-team">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Team &amp; Organization</span>
+        <h2>Built by the<br/>neuromorphic community</h2>
+        <p class="section-sub" style="max-width:520px; margin-top:12px;">Structured around three working groups — Community, Research, and Applications — led by a founding team with deep expertise across neuromorphic hardware, software, and ecosystem building.</p>
+      </div>
+
+      <div class="org-chart reveal">
+        <div class="org-top">
+          <div class="org-box-main">
+            <div class="org-main-title">The Project Phasor Company</div>
+            <div class="org-main-leads">Blessing Effiong &amp; Veric Tan — Co-Leads</div>
+          </div>
+        </div>
+        <div class="org-spine"></div>
+        <div class="org-row">
+          <div class="org-dept-wrap">
+            <div class="org-dept-line"></div>
+            <div class="org-dept">
+              <div class="org-dept-icon">◯</div>
+              <div class="org-dept-name">Community</div>
+              <div class="org-dept-sub">Working Group</div>
+            </div>
+          </div>
+          <div class="org-dept-wrap">
+            <div class="org-dept-line"></div>
+            <div class="org-dept">
+              <div class="org-dept-icon">△</div>
+              <div class="org-dept-name">Research</div>
+              <div class="org-dept-sub">Working Group</div>
+            </div>
+          </div>
+          <div class="org-dept-wrap">
+            <div class="org-dept-line"></div>
+            <div class="org-dept">
+              <div class="org-dept-icon">□</div>
+              <div class="org-dept-name">Applications</div>
+              <div class="org-dept-sub">Working Group</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-grid">
+        <div class="team-card reveal">
+          <div class="team-avatar">BA</div>
+          <div class="team-info">
+            <div class="team-name">Brian Anderson</div>
+            <div class="team-role">Founder &amp; Lead</div>
+            <div class="team-bio">Neuromorphic engineer with pioneering industry methods. MIT degrees in Electrical Engineering &amp; Computer Science.</div>
+            <div class="team-affil">
+              <span class="tag">MIT</span><span class="tag">Intel Labs</span><span class="tag">Google</span><span class="tag">NVIDIA</span>
+            </div>
+          </div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">BE</div>
+          <div class="team-info">
+            <div class="team-name">Blessing Effiong</div>
+            <div class="team-role">Co-Lead</div>
+            <div class="team-bio">Research Scientist &amp; doctoral candidate championing the NeuroTriangle: data, algorithms, and hardware together.</div>
+            <div class="team-affil">
+              <span class="tag">Saint Louis Univ.</span><span class="tag">AI &amp; Robotics Lab</span>
+            </div>
+          </div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">VT</div>
+          <div class="team-info">
+            <div class="team-name">Veric Tan</div>
+            <div class="team-role">Co-Lead</div>
+            <div class="team-bio">Data scientist, ML engineer, material scientist, and biotech investor focused on AI sustainability and efficiency.</div>
+            <div class="team-affil">
+              <span class="tag">Johns Hopkins</span>
+            </div>
+          </div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">DM</div>
+          <div class="team-info">
+            <div class="team-name">Dylan Muir</div>
+            <div class="team-role">Contributor</div>
+            <div class="team-bio">Hardware-software co-design expert bridging commercial and academic neuromorphic efforts.</div>
+            <div class="team-affil">
+              <span class="tag">SynSense</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="footer-right">
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- COMMUNITY -->
+  <section id="community" class="section-community">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Community</span>
+        <h2>A growing global<br/>movement</h2>
+        <p class="section-sub" style="max-width:520px; margin-top:12px;">Project Phasor has attracted endorsers and contributors from universities, national labs, startups, and industry across the globe.</p>
+      </div>
+
+      <div class="community-stats reveal">
+        <div class="c-stat">
+          <div class="c-stat-val">50+</div>
+          <div class="c-stat-label">Individual Endorsers</div>
+        </div>
+        <div class="c-stat-div"></div>
+        <div class="c-stat">
+          <div class="c-stat-val">20+</div>
+          <div class="c-stat-label">Institutions</div>
+        </div>
+        <div class="c-stat-div"></div>
+        <div class="c-stat">
+          <div class="c-stat-val">15+</div>
+          <div class="c-stat-label">Countries</div>
+        </div>
+        <div class="c-stat-div"></div>
+        <div class="c-stat">
+          <div class="c-stat-val">3</div>
+          <div class="c-stat-label">Working Groups</div>
+        </div>
+      </div>
+
+      <div class="endorsers-section">
+        <div class="endorsers-head">
+          <h3>Endorsers</h3>
+          <a href="https://www.project-phasor.org/" target="_blank" class="btn-outline btn-sm">Add Your Endorsement →</a>
+        </div>
+
+        <div class="endorsers-grid" id="endorsers-grid">
+          <div class="endorser-card reveal">
+            <div class="endorser-name">James Knight</div>
+            <div class="endorser-role">EPSRC Research Software Engineering Fellow</div>
+            <div class="endorser-affil">University of Sussex</div>
+            <div class="endorser-quote">"What hardware and software can be used to train SNNs at scale remains an open question. It's really exciting to be part of a community starting to think about this."</div>
+          </div>
+          <div class="endorser-card reveal">
+            <div class="endorser-name">Gianvito Urgese</div>
+            <div class="endorser-role">Associate Professor</div>
+            <div class="endorser-affil">Politecnico di Torino</div>
+            <div class="endorser-quote">"A common compiler standard will enable cross-platform compatibility, accelerate innovation, and unlock the full potential of this transformative technology."</div>
+          </div>
+          <div class="endorser-card reveal">
+            <div class="endorser-name">Erika Schmitt</div>
+            <div class="endorser-role">Co-Founder &amp; CEO</div>
+            <div class="endorser-affil">Cambrya, Inc.</div>
+            <div class="endorser-quote">"Project Phasor's focus on aligning the field to accelerate deployment is exactly what's needed as neuromorphics mature from research to real-world applications."</div>
+          </div>
+          <div class="endorser-card reveal">
+            <div class="endorser-name">Hector A. Gonzalez</div>
+            <div class="endorser-role">CEO</div>
+            <div class="endorser-affil">SpiNNcloud Systems</div>
+            <div class="endorser-quote">"We believe the Phasors project has the potential to unify the highly diverse neuromorphic field."</div>
+          </div>
+          <div class="endorser-card reveal">
+            <div class="endorser-name">Amirreza Yousefzadeh</div>
+            <div class="endorser-role">Assistant Professor</div>
+            <div class="endorser-affil">University of Twente</div>
+            <div class="endorser-quote">"Developing an SDK is significantly more challenging than designing neuromorphic processors. Project Phasor's vision for a shared compiler is precisely what the community needs."</div>
+          </div>
+          <div class="endorser-card reveal">
+            <div class="endorser-name">Alexander Ororbia</div>
+            <div class="endorser-role">Assistant Professor &amp; Lab Director</div>
+            <div class="endorser-affil">Rochester Institute of Technology</div>
+            <div class="endorser-quote">"Neuromorphic computing is among the most immediately promising alternatives given recent energy and cost concerns over intelligent systems."</div>
+          </div>
+          <!-- Hidden endorsers -->
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">Felix Wang</div>
+            <div class="endorser-role">Researcher / Engineer</div>
+            <div class="endorser-affil">Sandia National Laboratories</div>
+            <div class="endorser-quote">"Software and tooling will be the primary interface for users — opening up the potential of the hardware to a wide and creative neuromorphic community."</div>
+          </div>
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">Thomas Nowotny</div>
+            <div class="endorser-role">Professor of Informatics</div>
+            <div class="endorser-affil">University of Sussex</div>
+            <div class="endorser-quote">"Thinking about training on neuromorphic hardware is a very important and timely topic."</div>
+          </div>
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">Cristian Axenie</div>
+            <div class="endorser-role">Professor</div>
+            <div class="endorser-affil">Technische Hochschule Nürnberg</div>
+            <div class="endorser-quote">"Project Phasor will provide a platform that fosters dialogue, adoption, and the overall impact of neuromorphic technology across industries."</div>
+          </div>
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">Giulia D'Angelo</div>
+            <div class="endorser-role">Researcher</div>
+            <div class="endorser-affil">Czech Technical University</div>
+            <div class="endorser-quote">"Project Phasor would play a crucial role in accelerating progress and ensuring neuromorphic solutions become commercially viable."</div>
+          </div>
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">Christian Borelli</div>
+            <div class="endorser-role">Founder &amp; CSO</div>
+            <div class="endorser-affil">Analogue Insight (UK)</div>
+            <div class="endorser-quote">"Project Phasor is the foundation for this future — a unified, open-source ecosystem that fosters collaboration across research, development, and deployment."</div>
+          </div>
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">Jens Pedersen</div>
+            <div class="endorser-role">Doctoral Fellow</div>
+            <div class="endorser-affil">KTH Royal Institute of Technology</div>
+            <div class="endorser-quote">"Project Phasor is correctly targeting the space needed to provide a valuable bridge between research and industry."</div>
+          </div>
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">Giovanni Michel</div>
+            <div class="endorser-role">Graduate Research Assistant</div>
+            <div class="endorser-affil">Los Alamos National Lab / Northwestern Univ.</div>
+            <div class="endorser-quote">"Brian and Project Phasor are essential to adoption of neuromorphic systems."</div>
+          </div>
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">César D. Salvador</div>
+            <div class="endorser-role">Professor &amp; CEO</div>
+            <div class="endorser-affil">UPC / Perception Research (Peru)</div>
+            <div class="endorser-quote">"Neuromorphic computing represents one of the most promising frontiers, alongside quantum and in-memory computing."</div>
+          </div>
+          <div class="endorser-card reveal hidden-endorser">
+            <div class="endorser-name">Mazdak Fatahi</div>
+            <div class="endorser-role">Engineer</div>
+            <div class="endorser-affil">Université de Lille</div>
+            <div class="endorser-quote">"A shared software stack and standardized compilation tools are essential to unlock the full potential of neuromorphic computing."</div>
+          </div>
+        </div>
+
+        <button class="show-more-btn" id="show-more-btn" onclick="toggleEndorsers()">
+          Show all endorsers <span id="toggle-arrow">↓</span>
+        </button>
+      </div>
+
+      <div class="resources-section">
+        <h3 class="resources-title">Community Resources</h3>
+        <div class="docs-grid">
+          <a class="doc-card reveal" href="https://discord.com/invite/jh9VQaNUdW" target="_blank">
+            <div class="doc-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20.3 4.4A18.9 18.9 0 0 0 15.5 3c-.2.4-.5 1-.7 1.4a17.4 17.4 0 0 0-5.6 0C9 4 8.7 3.4 8.5 3A18.8 18.8 0 0 0 3.7 4.4C.5 9.2-.3 13.9.1 18.5a19 19 0 0 0 5.8 3 14 14 0 0 0 1.2-2 12.4 12.4 0 0 1-2-.9l.5-.4a13.6 13.6 0 0 0 11.8 0l.5.4a12.5 12.5 0 0 1-2 1 14 14 0 0 0 1.2 2 19 19 0 0 0 5.8-3c.5-5.2-.9-9.8-3.6-14.1zM8 15.5c-1.2 0-2.2-1.1-2.2-2.5S6.8 10.5 8 10.5s2.2 1.1 2.2 2.5S9.2 15.5 8 15.5zm8 0c-1.2 0-2.2-1.1-2.2-2.5s1-2.5 2.2-2.5 2.2 1.1 2.2 2.5-1 2.5-2.2 2.5z" fill="currentColor"/></svg>
+            </div>
+            <div class="doc-title">Discord Server</div>
+            <div class="doc-desc">Real-time coordination, working group announcements, and community discussion.</div>
+            <span class="doc-tag">Community</span>
+          </a>
+          <a class="doc-card reveal" href="https://groups.google.com/g/project-phasor-interest" target="_blank">
+            <div class="doc-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 8l10 7 10-7" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <div class="doc-title">Mailing List</div>
+            <div class="doc-desc">Join project-phasor-interest for updates, meeting invites, and announcements.</div>
+            <span class="doc-tag">Email Group</span>
+          </a>
+          <a class="doc-card reveal" href="https://www.project-phasor.org/" target="_blank">
+            <div class="doc-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="8" y1="15" x2="12" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </div>
+            <div class="doc-title">Working Group Meetings</div>
+            <div class="doc-desc">Weekly large group meetings and small group prep sessions across EMEA, APAC, and Americas timezones.</div>
+            <span class="doc-tag">Meetings</span>
+          </a>
+          <a class="doc-card reveal" href="https://docs.google.com/forms/d/e/1FAIpQLSf7iogJQJigahFhY3LxnqpYlv6Pvol0_EPNmjN1cPLWlrknyg/viewform" target="_blank">
+            <div class="doc-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polyline points="16 18 22 12 16 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="8 6 2 12 8 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="doc-title">Compiler Feature Requests</div>
+            <div class="doc-desc">Submit your ideas for features in the compiler and virtual machines.</div>
+            <span class="doc-tag">Contribute</span>
+          </a>
+          <a class="doc-card reveal" href="https://docs.google.com/forms/d/e/1FAIpQLSfk0cQiVbmkJF0LdCfXUUrcPr6Ggm57brahj8BwqOAc-jKC3Q/viewform" target="_blank">
+            <div class="doc-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div class="doc-title">Research Fund Pledge</div>
+            <div class="doc-desc">Submit an informal pledge to support the neuromorphic AI research funding drive.</div>
+            <span class="doc-tag">Funding</span>
+          </a>
+          <a class="doc-card reveal" href="https://open-neuromorphic.org/workshops/project-phasor-kickoff-brian-anderson/" target="_blank">
+            <div class="doc-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="doc-title">Watch the Kickoff Talk</div>
+            <div class="doc-desc">Brian Anderson and core contributors present Project Phasor's vision at Open Neuromorphic.</div>
+            <span class="doc-tag">Video</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- CONTACT -->
+  <section id="contact" class="section-contact">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Contact</span>
+        <h2>Get involved</h2>
+      </div>
+      <div class="contact-layout">
+        <div class="contact-info reveal">
+          <h3>Join the neuromorphic<br/>revolution.</h3>
+          <p>Project Phasor is an open community effort. Whether you're a researcher, hardware vendor, software engineer, or institution — there's a place for you. Attend working group meetings, contribute to the codebase, add your endorsement, or partner with us.</p>
+          <div class="contact-links">
+            <a href="https://www.project-phasor.org/" class="contact-link" target="_blank">
+              <span class="contact-link-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="1.8"/></svg>
+              </span>
+              project-phasor.org
+            </a>
+            <a href="https://discord.com/invite/jh9VQaNUdW" class="contact-link" target="_blank">
+              <span class="contact-link-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20.3 4.4A18.9 18.9 0 0 0 15.5 3c-.2.4-.5 1-.7 1.4a17.4 17.4 0 0 0-5.6 0C9 4 8.7 3.4 8.5 3A18.8 18.8 0 0 0 3.7 4.4C.5 9.2-.3 13.9.1 18.5a19 19 0 0 0 5.8 3 14 14 0 0 0 1.2-2 12.4 12.4 0 0 1-2-.9l.5-.4a13.6 13.6 0 0 0 11.8 0l.5.4a12.5 12.5 0 0 1-2 1 14 14 0 0 0 1.2 2 19 19 0 0 0 5.8-3c.5-5.2-.9-9.8-3.6-14.1zM8 15.5c-1.2 0-2.2-1.1-2.2-2.5S6.8 10.5 8 10.5s2.2 1.1 2.2 2.5S9.2 15.5 8 15.5zm8 0c-1.2 0-2.2-1.1-2.2-2.5s1-2.5 2.2-2.5 2.2 1.1 2.2 2.5-1 2.5-2.2 2.5z" fill="currentColor"/></svg>
+              </span>
+              Discord Community
+            </a>
+            <a href="https://groups.google.com/g/project-phasor-interest" class="contact-link" target="_blank">
+              <span class="contact-link-icon">@</span>
+              project-phasor-interest mailing list
+            </a>
+            <a href="https://www.linkedin.com/company/project-phasor" class="contact-link" target="_blank">
+              <span class="contact-link-icon">in</span>
+              LinkedIn — Project Phasor
+            </a>
+          </div>
+        </div>
+        <form class="contact-form reveal" onsubmit="handleSubmit(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fname">First Name</label>
+              <input type="text" id="fname" placeholder="Ada" />
+            </div>
+            <div class="form-group">
+              <label for="lname">Last Name</label>
+              <input type="text" id="lname" placeholder="Lovelace" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="ada@institution.edu" />
+          </div>
+          <div class="form-group">
+            <label for="affil">Affiliation</label>
+            <input type="text" id="affil" placeholder="University / Company / Independent" />
+          </div>
+          <div class="form-group">
+            <label for="contrib">How can you contribute?</label>
+            <select id="contrib">
+              <option value="">Select an area...</option>
+              <option>Compiler / Software Development</option>
+              <option>Hardware / Architecture Design</option>
+              <option>Research &amp; Academia</option>
+              <option>Standards &amp; Governance</option>
+              <option>Dataset / Benchmarking</option>
+              <option>Community &amp; Outreach</option>
+              <option>Funding &amp; Partnership</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="msg">Message (optional)</label>
+            <textarea id="msg" placeholder="Tell us about your background or interest in neuromorphic computing..."></textarea>
+          </div>
+          <button type="submit" class="form-submit">Submit Interest →</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <div class="footer-logo">
+          <img src="assets/images/logo.png" alt="Project Phasor" class="footer-logo-img" />
+        </div>
+        <div class="footer-copy">© 2025 Project Phasor — Open Neuromorphic Initiative</div>
+      </div>
       <div class="footer-links">
-        <a href="https://www.project-phasor.org">Community ↗</a>
-        <a href="https://discord.com/invite/jh9VQaNUdW">Discord ↗</a>
-        <a href="https://www.linkedin.com/company/project-phasor">LinkedIn ↗</a>
-        <a href="https://www.project-phasor.org">Platform ↗</a>
+        <a href="#mission">Mission</a>
+        <a href="#technology">Technology</a>
+        <a href="#team">Team</a>
+        <a href="#community">Community</a>
+        <a href="#contact">Contact</a>
+        <a href="https://www.project-phasor.org/" target="_blank">Homepage ↗</a>
       </div>
-      <div class="footer-copy">projectphasor.com — Confidential</div>
     </div>
-  </div>
-</footer>
+  </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-// Scroll reveal
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      const siblings = Array.from(e.target.parentElement.querySelectorAll('.reveal:not(.visible)'));
-      const delay = Math.min(siblings.indexOf(e.target) * 0.08, 0.42);
-      e.target.style.transitionDelay = delay + 's';
-      e.target.classList.add('visible');
-      obs.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.07, rootMargin: '0px 0px -32px 0px' });
-document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-
-// Nav shadow on scroll
-window.addEventListener('scroll', () => {
-  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 20);
-}, { passive: true });
-
-// Mobile menu
-function toggleMenu() { document.getElementById('mobile-menu').classList.toggle('open'); }
-function closeMenu() { document.getElementById('mobile-menu').classList.remove('open'); }
-document.addEventListener('click', e => {
-  const m = document.getElementById('mobile-menu');
-  if (m.classList.contains('open') && !m.contains(e.target) && !document.querySelector('.nav-burger').contains(e.target)) m.classList.remove('open');
-});
-
-// Form
-function handleSubmit(e) {
-  e.preventDefault();
-  const btn = e.target.querySelector('.form-submit');
-  btn.textContent = 'Request Se
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
