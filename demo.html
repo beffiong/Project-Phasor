@@ -736,9 +736,9 @@ footer {
     <!-- dataset selector + run -->
     <div class="controls-row">
       <span class="controls-label">Dataset ·</span>
-      <button class="clip-btn active" data-clip="HandWaving">Hand Waving</button>
-      <button class="clip-btn" data-clip="WalkingWithDog">Walking w/ Dog</button>
-      <button class="clip-btn" data-clip="Biking">Biking</button>
+      <button class="clip-btn active" data-clip="yes">Keyword &ldquo;yes&rdquo;</button>
+      <button class="clip-btn" data-clip="no">Keyword &ldquo;no&rdquo;</button>
+      <button class="clip-btn" data-clip="go">Keyword &ldquo;go&rdquo;</button>
       <button class="run-btn" id="runBtn">▶ Run Conversion</button>
     </div>
   </div>
@@ -893,7 +893,7 @@ footer {
 <script>
 // ── Config ─────────────────────────────────────────────────
 // Set window.PHASOR_API before this script loads, or edit here.
-const API = (window.PHASOR_API || "http://localhost:8000").replace(/\/$/, "");
+const API = (window.PHASOR_API || "https://elsewhere-overprice-acquaint.ngrok-free.de").replace(/\/$/, "");
 
 // ── State ──────────────────────────────────────────────────
 let clip      = "HandWaving";
